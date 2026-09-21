@@ -1,0 +1,93 @@
+---
+
+# ==========================================================
+# Application directory
+# ==========================================================
+
+- name: Set application directory ownership and permissions
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+
+# ==========================================================
+# Environment file
+# ==========================================================
+
+- name: Create production environment file
+  ansible.builtin.template:
+    src: admissionhub.env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+
+
+# ==========================================================
+# Certbot and Nginx directories
+# ==========================================================
+
+- name: Create Certbot configuration directory
+  ansible.builtin.file:
+    path: /etc/letsencrypt
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create Nginx work directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}/nginx"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+
+# ==========================================================
+# Verify application directory
+# ==========================================================
+
+- name: Check application directory
+  ansible.builtin.stat:
+    path: "{{ app_dir }}"
+  register: app_directory
+
+
+- name: Confirm application directory exists
+  ansible.builtin.debug:
+    msg: "Application directory {{ app_dir }} is ready."
+  when: app_directory.stat.exists
+
+
+# ==========================================================
+# Nginx configuration
+# ==========================================================
+
+- name: Configure AdmissionHub Nginx
+  ansible.builtin.template:
+    src: templates/nginx.conf.j2
+    dest: "{{ app_dir }}/nginx/nginx.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+
+- name: Ensure frontend directory exists
+  ansible.builtin.file:
+    path: "{{ app_dir }}/aggregate-calc-frontend"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Generate frontend environment file
+  ansible.builtin.template:
+    src: templates/frontend.env.j2
+    dest: "{{ app_dir }}/aggregate-calc-frontend/.env"
+    owner: root
+    group: root
+    mode: "0644"

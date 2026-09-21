@@ -1,0 +1,17 @@
+---
+- name: Prepare and deploy AdmissionHub
+  hosts: web
+  become: true
+
+  roles:
+    - role: dependencies
+      tags: dependencies
+
+    - role: docker
+      tags: docker
+
+    - role: configuration
+      tags: configuration
+
+    - role: deployment
+      tags: deployment

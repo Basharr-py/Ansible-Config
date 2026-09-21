@@ -1,0 +1,121 @@
+---
+# ==========================================================
+# 3. Validate Compose
+# ==========================================================
+
+- name: Validate Docker Compose configuration
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ compose_file }}" config
+    chdir: "{{ app_dir }}"
+  changed_when: false
+
+
+# ==========================================================
+# 4. Pull images
+# ==========================================================
+
+- name: Check whether frontend image exists
+  ansible.builtin.command:
+    cmd: docker image inspect app-frontend
+  register: frontend_image
+  failed_when: false
+  changed_when: false
+
+- name: Build frontend image
+  ansible.builtin.command:
+    cmd: docker build -t app-frontend aggregate-calc-frontend/.
+    chdir: "{{ app_dir }}"
+  when: frontend_image.rc != 0
+
+
+# ==========================================================
+# 5. Start PostgreSQL, FastAPI and frontend
+# ==========================================================
+
+- name: Start application services without Nginx
+  ansible.builtin.command:
+    cmd: >
+      docker compose
+      -f "{{ compose_file }}"
+      up -d
+    chdir: "{{ app_dir }}"
+
+
+# ==========================================================
+# 6. Wait for PostgreSQL
+# ==========================================================
+
+- name: Wait for PostgreSQL to become ready
+  ansible.builtin.command:
+    cmd: >
+      docker compose
+      -f "{{ compose_file }}"
+      exec -T
+      postgres
+      pg_isready
+      -U "{{ database_user }}"
+      -d "{{ database_name }}"
+    chdir: "{{ app_dir }}"
+  register: postgres_ready
+  retries: 12
+  delay: 5
+  until: postgres_ready.rc == 0
+  changed_when: false
+
+
+# ==========================================================
+# 7. Check whether database already has tables
+# ==========================================================
+
+- name: Check database initialization state
+  ansible.builtin.command:
+    cmd: >
+      docker compose
+      -f "{{ compose_file }}"
+      exec -T
+      postgres
+      psql
+      -U "{{ database_user }}"
+      -d "{{ database_name }}"
+      -tAc
+      "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
+    chdir: "{{ app_dir }}"
+  register: database_table_count
+  changed_when: false
+
+
+# ==========================================================
+# 8. Restore database dump if database is empty
+# ==========================================================
+
+- name: Restore AdmissionHub database
+  ansible.builtin.shell:
+    cmd: >
+      docker compose
+      -f "{{ compose_file }}"
+      exec -T
+      postgres
+      psql
+      -U "{{ database_user }}"
+      -d "{{ database_name }}"
+      < "{{ database_dump }}"
+    chdir: "{{ app_dir }}"
+  when:
+    - restore_database | bool
+    - database_table_count.stdout | trim | int == 0
+
+# ==========================================================
+# 13. Display container status
+# ==========================================================
+
+- name: Check AdmissionHub containers
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ compose_file }}" ps
+    chdir: "{{ app_dir }}"
+  register: compose_status
+  changed_when: false
+
+
+- name: Display container status
+  ansible.builtin.debug:
+    var: compose_status.stdout

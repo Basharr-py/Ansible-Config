@@ -1,0 +1,99 @@
+---
+# ==========================================================
+# Docker Checker
+# ==========================================================
+
+- name: Check whether Docker is installed
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_check
+  failed_when: false
+  changed_when: false
+
+# ==========================================================
+# Docker Installation and Configuration
+# ==========================================================
+
+- name: Create Docker keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: docker_check.rc != 0
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  when: docker_check.rc != 0
+
+- name: Add Docker APT repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/ubuntu
+    suites: "{{ ansible_facts.distribution_release }}"
+    components:
+      - stable
+    architectures:
+      - "{{ 'amd64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    signed_by: /etc/apt/keyrings/docker.asc
+    state: present
+    enabled: true
+  when: docker_check.rc != 0
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+  when: docker_check.rc != 0
+
+
+# ==========================================================
+# Docker service
+# ==========================================================
+
+- name: Ensure Docker service is running
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+
+# ==========================================================
+# Verify Docker
+# ==========================================================
+
+- name: Get Docker version
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_version
+  changed_when: false
+
+
+- name: Display Docker version
+  ansible.builtin.debug:
+    msg: "{{ docker_version.stdout }}"
+
+
+# # ==========================================================
+# # Verify Docker Compose
+# # ==========================================================
+
+# - name: Get Docker Compose version
+#   ansible.builtin.command:
+#     cmd: docker compose version
+#   register: compose_version
+#   changed_when: false
+
+
+# - name: Display Docker Compose version
+#   ansible.builtin.debug:
+#     msg: "{{ compose_version.stdout }}"

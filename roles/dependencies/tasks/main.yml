@@ -1,0 +1,31 @@
+---
+# ==========================================================
+# Application dependencies
+# ==========================================================
+
+- name: Install application dependencies
+  ansible.builtin.apt:
+    name:
+      - git
+      # - unzip
+      - curl
+      - ca-certificates
+      - certbot
+    state: present
+    update_cache: true
+
+
+# ==========================================================
+# Enable Certbot
+# ==========================================================
+
+- name: Verify Certbot installation
+  ansible.builtin.command:
+    cmd: certbot --version
+  register: certbot_version
+  changed_when: false
+
+
+- name: Display Certbot version
+  ansible.builtin.debug:
+    msg: "{{ certbot_version.stdout }}"

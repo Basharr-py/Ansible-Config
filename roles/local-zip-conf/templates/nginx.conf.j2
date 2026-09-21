@@ -1,0 +1,35 @@
+events {}
+
+http {
+    upstream fastapi_app {
+        server fast-api_v2:8000;
+    }
+
+    server {
+        listen 80;
+        server_name {{ domain_name }};
+
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443 ssl;
+        server_name {{ domain_name }};
+
+        ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/{{ domain_name }}/privkey.pem;
+
+        location /api/ {
+            proxy_pass http://fastapi_app/;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location / {
+            proxy_pass http://app-frontend1:80;
+        }
+    }
+}

@@ -1,0 +1,6 @@
+---
+
+- name: Remove old application directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: absent

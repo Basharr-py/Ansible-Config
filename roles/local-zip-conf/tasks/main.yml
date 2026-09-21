@@ -1,0 +1,79 @@
+---
+# ==========================================================
+# Application directory
+# ==========================================================
+- name: Check if directory already exists
+  ansible.builtin.stat:
+    path: "{{ app_dir }}"
+  register: app_dir_stat
+
+- name: Print message if application directory already exists
+  ansible.builtin.debug:
+    msg: "Application directory {{ app_dir }} already exists. Skipping local ZIP deployment."
+  when: app_dir_stat.stat.exists
+
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: not app_dir_stat.stat.exists
+
+# ==========================================================
+# 2. Local ZIP deployment
+# ==========================================================
+
+- name: Copy AdmissionHub ZIP to server
+  ansible.builtin.copy:
+    src: "{{ local_zip }}"
+    dest: "/tmp/{{ app_name }}.tar.gz"
+    owner: root
+    group: root
+    mode: "0644"
+  when: not app_dir_stat.stat.exists
+
+
+
+- name: Extract AdmissionHub ZIP
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ app_name }}.tar.gz"
+    dest: "{{ app_dir }}"
+    remote_src: true
+  when: not app_dir_stat.stat.exists
+  
+
+
+- name: Remove temporary ZIP
+  ansible.builtin.file:
+    path: "/tmp/{{ app_name }}.tar.gz"
+    state: absent
+  
+
+# ==========================================================
+# Application dependencies
+# ==========================================================
+
+- name: Install application dependencies
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - certbot
+    state: present
+    update_cache: true
+
+
+# ==========================================================
+# Environment file
+# ==========================================================
+
+- name: Create production environment file
+  ansible.builtin.template:
+    src: admissionhub.env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+

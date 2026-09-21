@@ -1,0 +1,13 @@
+[web]
+
+public_server1 ansible_host=3.93.101.8 ansible_user=ubuntu ansible_ssh_private_key_file=~/LinOps_pkey.pem ansible_ssh_common_args='-o ControlMaster=no'
+
+
+[private]
+
+private_server1 ansible_host=i-06d38d46615e1fb23 ansible_user=ubuntu ansible_ssh_private_key_file=~/LinOps_pkey.pem 
+private_server2 ansible_host=i-0f98a6c19aae68c00 ansible_user=ubuntu ansible_ssh_private_key_file=~/LinOps_pkey.pem 
+
+[private:vars]
+
+ansible_ssh_common_args=-o ProxyCommand="aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p"

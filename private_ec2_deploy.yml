@@ -1,0 +1,22 @@
+---
+- name: Prepare and deploy AdmissionHub
+  hosts: private
+  become: true
+
+  vars_files:
+    - group_vars/web/admissionhub.yml
+    - group_vars/web/db-vault.yml
+
+  roles:
+    - role: local-zip-conf
+      tags: local-zip-conf
+
+    - role: docker
+      tags: docker
+
+    - role: local-zip-deployer
+      tags: local-zip-deployer
+
+  
+
+  

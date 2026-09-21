@@ -1,0 +1,60 @@
+---
+# ==========================================================
+# Application
+# ==========================================================
+
+app_name: development
+
+app_dir: "/opt/{{ app_name }}"
+
+compose_file: "compose.yaml"
+
+
+# ==========================================================
+# Deployment source
+# ==========================================================
+
+deployment_source: github
+
+repo_url: "https://github.com/Basharr-py/admissionhub.git"
+
+repo_branch: master
+
+local_zip: "/home/basharr/admissionhub.tar.gz"
+
+
+# ==========================================================
+# Environment
+# ==========================================================
+
+app_environment: production
+
+
+# ==========================================================
+# Domain / HTTPS
+# ==========================================================
+
+domain_name: "basharr.indevs.in"
+
+certbot_email: "protocolx911@gmail.com"
+
+
+
+# ==========================================================
+# Database initialization
+# ==========================================================
+
+database_dump: "{{ app_dir }}/aggregate_db.sql"
+
+restore_database: true
+
+
+# ==========================================================
+# Health check
+# ==========================================================
+
+health_check_url: "https://{{ domain_name }}"
+
+backend_health_url: "http://127.0.0.1:8000/"
+
+frontend_health_url: "http://127.0.0.1:8080"

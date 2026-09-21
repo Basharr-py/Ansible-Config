@@ -1,0 +1,14 @@
+# ==========================================================
+# 1. Get application source
+# ==========================================================
+
+- name: Clone or update AdmissionHub repository
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    version: "{{ repo_branch }}"
+    dest: "{{ app_dir }}"
+    update: true
+    force: true
+  when: deployment_source == "github"
+
+
