@@ -1,0 +1,15 @@
+[flask-web]
+
+f-public_server1 ansible_host=3.93.101.8 ansible_user=ubuntu ansible_ssh_private_key_file=~/LinOps_pkey.pem ansible_ssh_common_args='-o ControlMaster=no'
+
+
+[flask_private]
+
+f-private_server1 ansible_host=i-043c9ba956b41b2dd ansible_user=ubuntu
+f-private_server2 ansible_host=i-0b98d419ffd9f8dc4 ansible_user=ubuntu
+
+
+[flask_private:vars]
+
+ansible_connection=amazon.aws.aws_ssm
+ansible_aws_ssm_region=us-east-1
