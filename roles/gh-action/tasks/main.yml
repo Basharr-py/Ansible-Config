@@ -1,0 +1,241 @@
+---
+# ==========================================================
+# Application directory
+# ==========================================================
+- name: Check if directory already exists
+  ansible.builtin.stat:
+    path: "{{ app_dir }}"
+  register: app_dir_stat
+
+- name: Print message if application directory already exists
+  ansible.builtin.debug:
+    msg: "Application directory {{ app_dir }} already exists. Skipping local ZIP deployment."
+  when: app_dir_stat.stat.exists
+
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: not app_dir_stat.stat.exists
+
+- name: Copy Compose file to server
+  ansible.builtin.copy:
+    src: "{{ local_compose }}"
+    dest: "{{ app_dir }}/compose.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+  when: not app_dir_stat.stat.exists
+
+# ==========================================================
+# Application dependencies
+# ==========================================================
+
+- name: Install application dependencies
+  ansible.builtin.apt:
+    name:
+      - curl
+    state: present
+    update_cache: true
+
+
+# ==========================================================
+# Environment file
+# ==========================================================
+
+- name: Create production environment file
+  ansible.builtin.template:
+    src: admissionhub.env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+
+# ==========================================================
+# Docker Checker
+# ==========================================================
+
+- name: Check whether Docker is installed
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_check
+  failed_when: false
+  changed_when: false
+
+# ==========================================================
+# Docker Installation and Configuration
+# ==========================================================
+
+- name: Create Docker keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: docker_check.rc != 0
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  when: docker_check.rc != 0
+
+- name: Add Docker APT repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/ubuntu
+    suites: "{{ ansible_facts.distribution_release }}"
+    components:
+      - stable
+    architectures:
+      - "{{ 'amd64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    signed_by: /etc/apt/keyrings/docker.asc
+    state: present
+    enabled: true
+  when: docker_check.rc != 0
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+  when: docker_check.rc != 0
+
+
+# ==========================================================
+# Docker service
+# ==========================================================
+
+- name: Ensure Docker service is running
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+
+# ==========================================================
+# Verify Docker
+# ==========================================================
+
+- name: Get Docker version
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_version
+  changed_when: false
+
+
+- name: Display Docker version
+  ansible.builtin.debug:
+    msg: "{{ docker_version.stdout }}"
+
+
+
+# ==========================================================
+# 3. Validate Compose
+# ==========================================================
+
+- name: Validate Docker Compose configuration
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ local_compose }}" config
+    chdir: "{{ app_dir }}"
+  changed_when: false
+
+# ==========================================================
+# 5. Start PostgreSQL, FastAPI and frontend
+# ==========================================================
+
+- name: Start application services
+  ansible.builtin.command:
+    cmd: >
+      docker compose
+      -f "{{ local_compose }}"
+      up -d 
+    chdir: "{{ app_dir }}"
+
+
+# ==========================================================
+# 6. Wait for PostgreSQL
+# ==========================================================
+
+- name: Wait for PostgreSQL to become ready
+  ansible.builtin.command:
+    cmd: >
+      docker compose
+      -f "{{ local_compose }}"
+      exec -T
+      postgres
+      pg_isready
+      -U "{{ database_user }}"
+      -d "{{ database_name }}"
+    chdir: "{{ app_dir }}"
+  register: postgres_ready
+  retries: 12
+  delay: 5
+  until: postgres_ready.rc == 0
+  changed_when: false
+
+
+# ==========================================================
+# 7. Check whether database already has tables
+# ==========================================================
+
+# - name: Check database initialization state
+#   ansible.builtin.command:
+#     cmd: >
+#       docker compose
+#       -f "{{ local_compose }}"
+#       exec -T
+#       postgres
+#       psql
+#       -U "{{ database_user }}"
+#       -d "{{ database_name }}"
+#       -tAc
+#       "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
+#     chdir: "{{ app_dir }}"
+#   register: database_table_count
+#   changed_when: false
+
+
+# ==========================================================
+# 8. Restore database dump if database is empty
+# ==========================================================
+
+- name: Restore AdmissionHub database
+  ansible.builtin.shell:
+    cmd: >
+      aws s3 cp \
+      {{ aws_s3_arn }} \
+      - \
+      | docker exec -i postgres_db \
+        pg_restore \
+          -U {{ POSTGRES_USER }} \
+          -d {{ POSTGRES_DB }}
+    chdir: "{{ app_dir }}"
+  when:
+    - restore_database | bool
+    - database_table_count.stdout | trim | int == 0
+
+# ==========================================================
+# 13. Display container status
+# ==========================================================
+
+- name: Check AdmissionHub containers
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ local_compose }}" ps
+    chdir: "{{ app_dir }}"
+  register: compose_status
+  changed_when: false
+
+
+- name: Display container status
+  ansible.builtin.debug:
+    var: compose_status.stdout

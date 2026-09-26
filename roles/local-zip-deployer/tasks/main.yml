@@ -14,18 +14,18 @@
 # 4. Pull images
 # ==========================================================
 
-- name: Check whether frontend image exists
-  ansible.builtin.command:
-    cmd: docker image inspect app-frontend
-  register: frontend_image
-  failed_when: false
-  changed_when: false
+# - name: Check whether frontend image exists
+#   ansible.builtin.command:
+#     cmd: docker image inspect app-frontend
+#   register: frontend_image
+#   failed_when: false
+#   changed_when: false
 
-- name: Build frontend image
-  ansible.builtin.command:
-    cmd: docker build -t app-frontend aggregate-calc-frontend/.
-    chdir: "{{ app_dir }}"
-  when: frontend_image.rc != 0
+# - name: Build frontend image
+#   ansible.builtin.command:
+#     cmd: docker build -t app-frontend aggregate-calc-frontend/.
+#     chdir: "{{ app_dir }}"
+#   when: frontend_image.rc != 0
 
 
 # ==========================================================
@@ -37,7 +37,7 @@
     cmd: >
       docker compose
       -f "{{ compose_file }}"
-      up -d
+      up -d --build
     chdir: "{{ app_dir }}"
 
 

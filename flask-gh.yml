@@ -1,0 +1,17 @@
+---
+- name: Prepare and deploy The Flask App
+  hosts: flask-private
+  become: true
+
+  vars_files:
+    - group_vars/web/admissionhub.yml
+    - group_vars/web/db-vault.yml
+
+  roles:
+
+    - role: gh-action
+      tags: gh-action
+
+  
+
+  

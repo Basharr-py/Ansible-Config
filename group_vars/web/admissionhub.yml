@@ -3,12 +3,15 @@
 # Application
 # ==========================================================
 
-app_name: development
+app_name: admissionhub
 
 app_dir: "/opt/{{ app_name }}"
 
 compose_file: "compose.yaml"
 
+local_compose: "{{ playbook_dir }}/../Flask_API/compose.yaml"
+
+aws_s3_arn: "s3://basharr-ansible-ssm-380142015153/database-backups/db.dump"
 
 # ==========================================================
 # Deployment source

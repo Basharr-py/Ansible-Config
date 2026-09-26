@@ -25,10 +25,19 @@
 # 2. Local ZIP deployment
 # ==========================================================
 
-- name: Copy AdmissionHub ZIP to server
+# - name: Copy AdmissionHub ZIP to server
+#   ansible.builtin.copy:
+#     src: "{{ local_zip }}"
+#     dest: "/tmp/{{ app_name }}.tar.gz"
+#     owner: root
+#     group: root
+#     mode: "0644"
+#   when: not app_dir_stat.stat.exists
+
+- name: Copy Compose file to server
   ansible.builtin.copy:
-    src: "{{ local_zip }}"
-    dest: "/tmp/{{ app_name }}.tar.gz"
+    src: "{{ local_compose }}"
+    dest: "{{ app_dir }}/compose.yaml"
     owner: root
     group: root
     mode: "0644"
@@ -36,12 +45,12 @@
 
 
 
-- name: Extract AdmissionHub ZIP
-  ansible.builtin.unarchive:
-    src: "/tmp/{{ app_name }}.tar.gz"
-    dest: "{{ app_dir }}"
-    remote_src: true
-  when: not app_dir_stat.stat.exists
+# - name: Extract AdmissionHub ZIP
+#   ansible.builtin.unarchive:
+#     src: "/tmp/{{ app_name }}.tar.gz"
+#     dest: "{{ app_dir }}"
+#     remote_src: true
+#   when: not app_dir_stat.stat.exists
   
 
 
