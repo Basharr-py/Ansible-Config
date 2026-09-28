@@ -1,6 +1,6 @@
 ---
 - name: Prepare and deploy The Flask App
-  hosts: flask-private
+  hosts: flask_private
   become: true
 
   vars_files:
