@@ -83,6 +83,11 @@
     mode: '0644'
   when: docker_check.rc != 0
 
+- name: Gather minimal facts (distro/arch only)
+  ansible.builtin.setup:
+    gather_subset: min
+
+
 - name: Add Docker APT repository
   ansible.builtin.deb822_repository:
     gather_subset: min
