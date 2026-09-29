@@ -85,6 +85,7 @@
 
 - name: Add Docker APT repository
   ansible.builtin.deb822_repository:
+    gather_subset: min
     name: docker
     types: deb
     uris: https://download.docker.com/linux/ubuntu
