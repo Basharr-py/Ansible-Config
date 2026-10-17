@@ -207,9 +207,9 @@
   changed_when: false
 
 
-==========================================================
-7. Check whether database already has tables
-==========================================================
+# ==========================================================
+# 7. Check whether database already has tables
+# ==========================================================
 
 - name: Check database initialization state
   ansible.builtin.command:
