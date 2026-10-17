@@ -1,6 +1,8 @@
 ---
-
 - name: Transfer and restore database
+  tags:
+    - restore-db
+
   block:
     - name: Copy database dump to EC2
       ansible.builtin.copy:
@@ -24,4 +26,3 @@
       ansible.builtin.file:
         path: /tmp/db.dump
         state: absent
-
