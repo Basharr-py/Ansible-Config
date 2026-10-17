@@ -13,14 +13,17 @@
     - name: Restore database
       ansible.builtin.shell: |
         docker exec -i postgres_db \
-          pg_restore --exit-on-error \
-          -U basharr \
-          -d aggregate_db \
+          pg_restore \
+            --exit-on-error \
+            --single-transaction \
+            --no-owner \
+            --no-privileges \
+            -U {{ database_user | quote }} \
+            -d {{ database_name | quote }} \
           < /tmp/db.dump
       args:
         executable: /bin/bash
-      
-
+        
   always:
     - name: Delete temporary database dump
       ansible.builtin.file:
