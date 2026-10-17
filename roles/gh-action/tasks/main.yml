@@ -240,8 +240,8 @@
       - \
       | docker exec -i postgres_db \
         pg_restore \
-          -U {{ POSTGRES_USER }} \
-          -d {{ POSTGRES_DB }}
+          -U {{ database_user }} \
+          -d {{ database_name }}
     chdir: "{{ app_dir }}"
   when:
     - restore_database | bool
