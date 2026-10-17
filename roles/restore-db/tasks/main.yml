@@ -19,7 +19,7 @@
           < /tmp/db.dump
       args:
         executable: /bin/bash
-      no_log: true
+      
 
   always:
     - name: Delete temporary database dump
