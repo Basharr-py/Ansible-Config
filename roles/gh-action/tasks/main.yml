@@ -163,7 +163,7 @@
   ansible.builtin.command:
     cmd: >
       docker compose
-      -f "{{ local_compose }}"
+      -f "{{ app_dir }}/compose.yaml"
       up -d 
     chdir: "{{ app_dir }}"
 
@@ -176,7 +176,7 @@
   ansible.builtin.command:
     cmd: >
       docker compose
-      -f "{{ local_compose }}"
+      -f "{{ app_dir }}/compose.yaml"
       exec -T
       postgres
       pg_isready
@@ -236,7 +236,7 @@
 
 - name: Check AdmissionHub containers
   ansible.builtin.command:
-    cmd: docker compose -f "{{ local_compose }}" ps
+    cmd: docker compose -f "{{ app_dir }}/compose.yaml" ps
     chdir: "{{ app_dir }}"
   register: compose_status
   changed_when: false
