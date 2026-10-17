@@ -28,7 +28,7 @@
     owner: root
     group: root
     mode: "0644"
-  when: not app_dir_stat.stat.exists
+  
 
 # ==========================================================
 # Application dependencies
