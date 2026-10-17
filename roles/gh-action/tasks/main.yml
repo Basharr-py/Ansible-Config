@@ -156,6 +156,18 @@
   changed_when: false
 
 # ==========================================================
+# Environment file
+# ==========================================================
+
+- name: Create production environment file
+  ansible.builtin.template:
+    src: admissionhub.env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+    
+# ==========================================================
 # 5. Start PostgreSQL, FastAPI and frontend
 # ==========================================================
 
