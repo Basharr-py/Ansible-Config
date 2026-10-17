@@ -1,7 +1,6 @@
 ---
 - name: Prepare and deploy The Flask App
-  hosts: flask_private
-  gather_facts: false
+  hosts: flask_web
   become: true
 
   vars_files:
