@@ -215,7 +215,7 @@
 # 8. Restore database dump if database is empty
 # ==========================================================
 
-- name: Restore AdmissionHub database
+- name: Restore Flask database
   ansible.builtin.shell:
     cmd: >
       aws s3 cp \
