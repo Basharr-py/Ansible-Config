@@ -207,25 +207,25 @@
   changed_when: false
 
 
-# ==========================================================
-# 7. Check whether database already has tables
-# ==========================================================
+==========================================================
+7. Check whether database already has tables
+==========================================================
 
-# - name: Check database initialization state
-#   ansible.builtin.command:
-#     cmd: >
-#       docker compose
-#       -f "{{ local_compose }}"
-#       exec -T
-#       postgres
-#       psql
-#       -U "{{ database_user }}"
-#       -d "{{ database_name }}"
-#       -tAc
-#       "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
-#     chdir: "{{ app_dir }}"
-#   register: database_table_count
-#   changed_when: false
+- name: Check database initialization state
+  ansible.builtin.command:
+    cmd: >
+      docker compose
+      -f "{{ app_dir }}/compose.yaml"
+      exec -T
+      db
+      psql
+      -U "{{ database_user }}"
+      -d "{{ database_name }}"
+      -tAc
+      "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
+    chdir: "{{ app_dir }}"
+  register: database_table_count
+  changed_when: false
 
 
 # ==========================================================
