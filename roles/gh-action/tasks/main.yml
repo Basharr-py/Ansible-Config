@@ -207,45 +207,45 @@
   changed_when: false
 
 
-# ==========================================================
-# 7. Check whether database already has tables
-# ==========================================================
+# # ==========================================================
+# # 7. Check whether database already has tables
+# # ==========================================================
 
-- name: Check database initialization state
-  ansible.builtin.command:
-    cmd: >
-      docker compose
-      -f "{{ app_dir }}/compose.yaml"
-      exec -T
-      db
-      psql
-      -U "{{ database_user }}"
-      -d "{{ database_name }}"
-      -tAc
-      "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
-    chdir: "{{ app_dir }}"
-  register: database_table_count
-  changed_when: false
+# - name: Check database initialization state
+#   ansible.builtin.command:
+#     cmd: >
+#       docker compose
+#       -f "{{ app_dir }}/compose.yaml"
+#       exec -T
+#       db
+#       psql
+#       -U "{{ database_user }}"
+#       -d "{{ database_name }}"
+#       -tAc
+#       "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
+#     chdir: "{{ app_dir }}"
+#   register: database_table_count
+#   changed_when: false
 
 
-# ==========================================================
-# 8. Restore database dump if database is empty
-# ==========================================================
+# # ==========================================================
+# # 8. Restore database dump if database is empty
+# # ==========================================================
 
-- name: Restore Flask database
-  ansible.builtin.shell:
-    cmd: >
-      aws s3 cp \
-      {{ aws_s3_arn }} \
-      - \
-      | docker exec -i postgres_db \
-        pg_restore \
-          -U {{ database_user }} \
-          -d {{ database_name }}
-    chdir: "{{ app_dir }}"
-  when:
-    - restore_database | bool
-    - database_table_count.stdout | trim | int == 0
+# - name: Restore Flask database
+#   ansible.builtin.shell:
+#     cmd: >
+#       aws s3 cp \
+#       {{ aws_s3_arn }} \
+#       - \
+#       | docker exec -i postgres_db \
+#         pg_restore \
+#           -U {{ database_user }} \
+#           -d {{ database_name }}
+#     chdir: "{{ app_dir }}"
+#   when:
+#     - restore_database | bool
+#     - database_table_count.stdout | trim | int == 0
 
 # ==========================================================
 # 13. Display container status

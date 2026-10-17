@@ -1,0 +1,26 @@
+
+- name: Transfer and restore database
+  block:
+    - name: Copy database dump to EC2
+      ansible.builtin.copy:
+        src: "{{ local_db_dump }}"
+        dest: /tmp/db.dump
+        mode: "0600"
+
+    - name: Restore database
+      ansible.builtin.shell: |
+        docker exec -i postgres_db \
+          pg_restore --exit-on-error \
+          -U basharr \
+          -d aggregate_db \
+          < /tmp/db.dump
+      args:
+        executable: /bin/bash
+      no_log: true
+
+  always:
+    - name: Delete temporary database dump
+      ansible.builtin.file:
+        path: /tmp/db.dump
+        state: absent
+
