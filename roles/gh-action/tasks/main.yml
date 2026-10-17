@@ -166,7 +166,7 @@
     owner: root
     group: root
     mode: "0600"
-    
+
 # ==========================================================
 # 5. Start PostgreSQL, FastAPI and frontend
 # ==========================================================
@@ -190,7 +190,7 @@
       docker compose
       -f "{{ app_dir }}/compose.yaml"
       exec -T
-      postgres
+      db
       pg_isready
       -U "{{ database_user }}"
       -d "{{ database_name }}"
