@@ -45,6 +45,10 @@
 # ==========================================================
 # Environment file
 # ==========================================================
+- name:  Check if .env file already exists
+  ansible.builtin.stat:
+    path: "{{ app_dir }}/.env"
+  register: env_file_stat
 
 - name: Create production environment file
   ansible.builtin.template:
@@ -53,6 +57,7 @@
     owner: root
     group: root
     mode: "0600"
+  when: not env_file_stat.stat.exists
 
 # ==========================================================
 # Docker Checker
