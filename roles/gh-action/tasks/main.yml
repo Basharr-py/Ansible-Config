@@ -151,7 +151,7 @@
 
 - name: Validate Docker Compose configuration
   ansible.builtin.command:
-    cmd: docker compose -f "{{ local_compose }}" config
+    cmd: docker compose -f "{{ app_dir }}/compose.yaml" config
     chdir: "{{ app_dir }}"
   changed_when: false
 
