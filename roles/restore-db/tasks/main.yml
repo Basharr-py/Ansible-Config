@@ -1,4 +1,5 @@
 ---
+
 - name: Transfer and restore database
   block:
     - name: Copy database dump to EC2
