@@ -7,6 +7,7 @@
     path: "{{ app_dir }}"
   register: app_dir_stat
 
+
 - name: Print message if application directory already exists
   ansible.builtin.debug:
     msg: "Application directory {{ app_dir }} already exists. Skipping local ZIP deployment."
@@ -21,6 +22,34 @@
     mode: '0755'
   when: not app_dir_stat.stat.exists
 
+- name: Check if nginx file already exists
+  ansible.builtin.stat:
+    path: "{{ app_dir }}/nginx/nginx.conf"
+  register: nginx_stat
+
+- name: Print message if nginx file already exists
+  ansible.builtin.debug:
+    msg: "Nginx configuration file already exists. Skipping Nginx configuration."
+  when: nginx_stat.stat.exists
+
+- name: Create Nginx configuration directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}/nginx"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: not nginx_stat.stat.exists
+
+- name: Copy Nginx configuration file
+  ansible.builtin.template:
+    src: templates/nginx.conf.j2
+    dest: "{{ app_dir }}/nginx/nginx.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  when: not nginx_stat.stat.exists
+
 - name: Copy Compose file to server
   ansible.builtin.copy:
     src: "{{ local_compose }}"
@@ -28,6 +57,7 @@
     owner: root
     group: root
     mode: "0644"
+  
   
 
 # ==========================================================

@@ -7,6 +7,9 @@
     - group_vars/web/admissionhub.yml
     - group_vars/web/db-vault.yml
 
+  vars:
+    app_dir: "/opt/flask_app"
+
   roles:
 
     - role: gh-action
