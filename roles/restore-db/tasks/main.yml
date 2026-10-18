@@ -10,17 +10,33 @@
         dest: /tmp/db.dump
         mode: "0600"
 
-    - name: Restore database
+    # - name: Restore database
+    #   ansible.builtin.shell: |
+    #     docker exec -i postgres_db \
+    #       pg_restore \
+    #         --exit-on-error \
+    #         --single-transaction \
+    #         --no-owner \
+    #         --no-privileges \
+    #         -U {{ database_user | quote }} \
+    #         -d {{ database_name | quote }} \
+    #       < /tmp/db.dump
+    #   args:
+    #     executable: /bin/bash
+
+    - name: Copy ID sequence repair script
+      ansible.builtin.copy:
+        src: fix-id-sequences.sql
+        dest: /tmp/fix-id-sequences.sql
+        mode: "0600"
+
+    - name: Fix PostgreSQL primary key sequences
       ansible.builtin.shell: |
         docker exec -i postgres_db \
-          pg_restore \
-            --exit-on-error \
-            --single-transaction \
-            --no-owner \
-            --no-privileges \
-            -U {{ database_user | quote }} \
-            -d {{ database_name | quote }} \
-          < /tmp/db.dump
+          psql -v ON_ERROR_STOP=1 \
+          -U basharr \
+          -d aggregate_db \
+          < /tmp/fix-id-sequences.sql
       args:
         executable: /bin/bash
         
@@ -28,4 +44,9 @@
     - name: Delete temporary database dump
       ansible.builtin.file:
         path: /tmp/db.dump
+        state: absent
+
+    - name: Delete temporary ID sequence repair script
+      ansible.builtin.file:
+        path: /tmp/fix-id-sequences.sql
         state: absent
