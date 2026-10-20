@@ -213,6 +213,8 @@
       -f "{{ app_dir }}/compose.yaml"
       up -d 
     chdir: "{{ app_dir }}"
+  environment:
+    image_tag: "{{ image_tag }}"
 
 
 # ==========================================================
@@ -230,6 +232,8 @@
       -U "{{ database_user }}"
       -d "{{ database_name }}"
     chdir: "{{ app_dir }}"
+  environment:
+    image_tag: "{{ image_tag }}"
   register: postgres_ready
   retries: 12
   delay: 5
