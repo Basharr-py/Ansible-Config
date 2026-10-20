@@ -190,32 +190,97 @@
     chdir: "{{ app_dir }}"
   changed_when: false
 
+# # ==========================================================
+# # Environment file
+# # ==========================================================
+
+# - name: Create production environment file
+#   ansible.builtin.template:
+#     src: admissionhub.env.j2
+#     dest: "{{ app_dir }}/.env"
+#     owner: root
+#     group: root
+#     mode: "0600"
+
+# # ==========================================================
+# # 5. Start PostgreSQL, FastAPI and frontend
+# # ==========================================================
+
+# - name: Start application services
+#   ansible.builtin.command:
+#     cmd: >
+#       docker compose
+#       -f "{{ app_dir }}/compose.yaml"
+#       up -d 
+#     chdir: "{{ app_dir }}"
+
 # ==========================================================
-# Environment file
+# Production Deployment with Automatic Rollback
 # ==========================================================
 
-- name: Create production environment file
-  ansible.builtin.template:
-    src: admissionhub.env.j2
-    dest: "{{ app_dir }}/.env"
-    owner: root
-    group: root
+- name: Check for existing environment file
+  ansible.builtin.stat:
+    path: "{{ app_dir }}/.env"
+  register: previous_env
+
+- name: Back up previous deployment configuration
+  ansible.builtin.copy:
+    src: "{{ app_dir }}/.env"
+    dest: "{{ app_dir }}/.env.rollback"
+    remote_src: true
     mode: "0600"
+  when: previous_env.stat.exists
+  no_log: true
 
-# ==========================================================
-# 5. Start PostgreSQL, FastAPI and frontend
-# ==========================================================
+- name: Deploy Flask application
+  block:
 
-- name: Start application services
-  ansible.builtin.command:
-    cmd: >
-      docker compose
-      -f "{{ app_dir }}/compose.yaml"
-      up -d 
-    chdir: "{{ app_dir }}"
-  environment:
-    image_tag: "{{ image_tag }}"
+    - name: Create production environment file
+      ansible.builtin.template:
+        src: admissionhub.env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
 
+    - name: Start application services and wait for health
+      ansible.builtin.command:
+        cmd: >
+          docker compose
+          -f "{{ app_dir }}/compose.yaml"
+          up -d --wait --wait-timeout 120
+        chdir: "{{ app_dir }}"
+      register: deployment_result
+
+    - name: Confirm successful deployment
+      ansible.builtin.debug:
+        msg: "Deployment completed successfully for image {{ image_tag }}"
+
+  rescue:
+
+    - name: Restore previous environment configuration
+      ansible.builtin.copy:
+        src: "{{ app_dir }}/.env.rollback"
+        dest: "{{ app_dir }}/.env"
+        remote_src: true
+        mode: "0600"
+      when: previous_env.stat.exists
+      no_log: true
+
+    - name: Restart previous application version
+      ansible.builtin.command:
+        cmd: >
+          docker compose
+          -f "{{ app_dir }}/compose.yaml"
+          up -d --wait --wait-timeout 120
+        chdir: "{{ app_dir }}"
+      when: previous_env.stat.exists
+
+    - name: Fail deployment after rollback attempt
+      ansible.builtin.fail:
+        msg: >-
+          Deployment of {{ image_tag }} failed.
+          Rollback was attempted where previous configuration existed.
 
 # ==========================================================
 # 6. Wait for PostgreSQL
