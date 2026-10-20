@@ -285,6 +285,8 @@
   ansible.builtin.command:
     cmd: docker compose -f "{{ app_dir }}/compose.yaml" ps
     chdir: "{{ app_dir }}"
+  environment:
+    IMAGE_TAG: "{{ image_tag }}"
   register: compose_status
   changed_when: false
 
